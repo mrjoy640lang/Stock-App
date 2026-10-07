@@ -95,9 +95,9 @@ async function showDashboard() {
       </div>
 
       <div class="grid">
-        <button class="btn" ${soon("Products")}>
-          PRODUCTS
-        </button>
+        <button class="btn" onclick="showProducts()">
+  PRODUCTS
+</button>
 
         <button class="btn" ${soon("Transactions")}>
           TRANSACTIONS
