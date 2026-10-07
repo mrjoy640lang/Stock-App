@@ -8,35 +8,48 @@ const DB = (() => {
 
       req.onupgradeneeded = (e) => {
         const d = e.target.result;
-        d.createObjectStore("godowns", { keyPath: "id" });
-        d.createObjectStore("products", { keyPath: "id", autoIncrement: true });
 
-        const t = d.createObjectStore("transactions", {
-          keyPath: "id",
-          autoIncrement: true
-        });
-
-        t.createIndex("godown_id", "godown_id");
-        t.createIndex("product_id", "product_id");
-        t.createIndex("date", "date");
-
-        d.createObjectStore("settings", { keyPath: "key" });
-
-        // Create the 4 godowns automatically
-        const g = e.target.transaction.objectStore("godowns");
-
-        [1, 2, 3, 4].forEach((n) => {
-          g.add({
-            id: n,
-            name: "Godown " + n
+        if (!d.objectStoreNames.contains("godowns")) {
+          const g = d.createObjectStore("godowns", {
+            keyPath: "id"
           });
-        });
+
+          [1, 2, 3, 4].forEach((n) => {
+            g.add({
+              id: n,
+              name: "Godown " + n
+            });
+          });
+        }
+
+        if (!d.objectStoreNames.contains("products")) {
+          d.createObjectStore("products", {
+            keyPath: "id",
+            autoIncrement: true
+          });
+        }
+
+        if (!d.objectStoreNames.contains("transactions")) {
+          const t = d.createObjectStore("transactions", {
+            keyPath: "id",
+            autoIncrement: true
+          });
+
+          t.createIndex("godown_id", "godown_id");
+          t.createIndex("product_id", "product_id");
+          t.createIndex("date", "date");
+        }
+
+        if (!d.objectStoreNames.contains("settings")) {
+          d.createObjectStore("settings", {
+            keyPath: "key"
+          });
+        }
       };
 
       req.onsuccess = (e) => {
         db = e.target.result;
 
-        // Ask the phone to protect our data from automatic cleaning
         if (navigator.storage && navigator.storage.persist) {
           navigator.storage.persist();
         }
@@ -44,24 +57,61 @@ const DB = (() => {
         resolve();
       };
 
-      req.onerror = () => reject(req.error);
+      req.onerror = () => {
+        reject(req.error);
+      };
     });
   }
 
   function getAll(store) {
     return new Promise((resolve, reject) => {
-      const r = db
-        .transaction(store)
-        .objectStore(store)
-        .getAll();
+      const tx = db.transaction(store, "readonly");
+      const request = tx.objectStore(store).getAll();
 
-      r.onsuccess = () => resolve(r.result);
-      r.onerror = () => reject(r.error);
+      request.onsuccess = () => {
+        resolve(request.result);
+      };
+
+      request.onerror = () => {
+        reject(request.error);
+      };
+    });
+  }
+
+  function add(store, data) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, "readwrite");
+      const request = tx.objectStore(store).add(data);
+
+      request.onsuccess = () => {
+        resolve(request.result);
+      };
+
+      request.onerror = () => {
+        reject(request.error);
+      };
+    });
+  }
+
+  function update(store, data) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, "readwrite");
+      const request = tx.objectStore(store).put(data);
+
+      request.onsuccess = () => {
+        resolve(request.result);
+      };
+
+      request.onerror = () => {
+        reject(request.error);
+      };
     });
   }
 
   return {
     open,
-    getAll
+    getAll,
+    add,
+    update
   };
 })();
