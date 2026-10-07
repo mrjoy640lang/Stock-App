@@ -137,5 +137,42 @@ async function start() {
     app.classList.remove("hidden");
   }, 1500);
 }
+async function showProducts() {
+  const products = await DB.getAll("products");
 
+  app.innerHTML = `
+    <header>PRODUCTS</header>
+
+    <div class="wrap">
+
+      <button class="btn grey" onclick="showDashboard()">
+        ← BACK TO DASHBOARD
+      </button>
+
+      <div class="section-title">
+        Products
+      </div>
+
+      <div class="card">
+        ${
+          products.length === 0
+            ? "<p>No products added yet.</p>"
+            : products
+                .map(
+                  (p) => `
+                    <div>
+                      <strong>${p.name || "Unnamed Product"}</strong>
+                      <p>Code: ${p.code || "-"}</p>
+                      <p>Status: ${p.status || "ACTIVE"}</p>
+                    </div>
+                    <hr>
+                  `
+                )
+                .join("")
+        }
+      </div>
+
+    </div>
+  `;
+}
 start();
